@@ -115,7 +115,8 @@ const ctx = canvas.getContext("2d");
 const button = document.getElementById("spinButton");
 const result = document.getElementById("result");
 
-// 룰렛 확률 설정: 총 50칸, 한 칸당 2%
+
+ // 룰렛 확률 설정: 총 50칸, 한 칸당 2%
 const outcomes = [
     { label: "꽝", count: 35, color: "#aeb4c0" },
     { label: "3배", count: 1, color: "#ffca58" },
@@ -124,7 +125,7 @@ const outcomes = [
     { label: "1/2배", count: 4, color: "#f07878" }
 ];
 
-// 각 결과를 실제 룰렛의 개별 칸으로 변환
+// 결과를 50칸으로 만들기
 const slices = [];
 
 outcomes.forEach(item => {
@@ -136,7 +137,12 @@ outcomes.forEach(item => {
     }
 });
 
-// 총 50칸
+// Fisher-Yates 알고리즘으로 칸 순서 섞기
+for (let i = slices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [slices[i], slices[j]] = [slices[j], slices[i]];
+}
+
 const totalSlices = slices.length;
 const sliceAngle = Math.PI * 2 / totalSlices;
 
