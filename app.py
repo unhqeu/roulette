@@ -252,6 +252,6 @@ drawWheel();
 
 components.html(
     html_code,
-    height=650,
+    height=800,
     scrolling=False
 )
