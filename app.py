@@ -1,4 +1,14 @@
 
+import streamlit as st
+import streamlit.components.v1 as components
+
+st.set_page_config(
+    page_title="룰렛",
+    layout="wide"
+)
+
+html_code = r"""
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -237,3 +247,11 @@ drawWheel();
 
 </body>
 </html>
+
+"""
+
+components.html(
+    html_code,
+    height=650,
+    scrolling=False
+)
