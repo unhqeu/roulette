@@ -116,7 +116,7 @@ const button = document.getElementById("spinButton");
 const result = document.getElementById("result");
 
 
- // 룰렛 확률 설정: 총 50칸, 한 칸당 2%
+
 const outcomes = [
     { label: "꽝", count: 35, color: "#aeb4c0" },
     { label: "3배", count: 1, color: "#ffca58" },
@@ -125,7 +125,7 @@ const outcomes = [
     { label: "1/2배", count: 4, color: "#f07878" }
 ];
 
-// 결과를 50칸으로 만들기
+// 50칸 생성
 const slices = [];
 
 outcomes.forEach(item => {
@@ -137,12 +137,88 @@ outcomes.forEach(item => {
     }
 });
 
-// Fisher-Yates 알고리즘으로 칸 순서 섞기
-for (let i = slices.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [slices[i], slices[j]] = [slices[j], slices[i]];
+// 일반 칸을 균등하게 분산하고 고배율 칸은 서로 멀리 배치
+const arranged = new Array(50).fill(null);
+
+function placeSpaced(label, count, minDistance) {
+    let placed = 0;
+    let attempts = 0;
+
+    while (placed < count && attempts < 10000) {
+        attempts++;
+
+        const index = Math.floor(Math.random() * 50);
+
+        if (arranged[index] !== null) continue;
+
+        const farEnough = arranged.every((item, i) => {
+            if (!item) return true;
+            if (item.label !== "2배" && item.label !== "3배") {
+                return true;
+            }
+
+            const distance = Math.min(
+                Math.abs(index - i),
+                50 - Math.abs(index - i)
+            );
+
+            if (
+                (label === "2배" || label === "3배") &&
+                (item.label === "2배" || item.label === "3배")
+            ) {
+                return distance >= minDistance;
+            }
+
+            return true;
+        });
+
+        if (farEnough) {
+            const source = outcomes.find(x => x.label === label);
+            arranged[index] = {
+                label: label,
+                color: source.color
+            };
+            placed++;
+        }
+    }
 }
 
+// 3배는 하나, 2배는 다섯 칸을 서로 떨어뜨려 배치
+placeSpaced("3배", 1, 12);
+placeSpaced("2배", 5, 5);
+
+// 나머지 결과 채우기
+const remaining = [];
+
+outcomes.forEach(item => {
+    const alreadyPlaced = arranged.filter(
+        x => x && x.label === item.label
+    ).length;
+
+    for (let i = alreadyPlaced; i < item.count; i++) {
+        remaining.push({
+            label: item.label,
+            color: item.color
+        });
+    }
+});
+
+// 꽝과 나머지 배율 칸을 빈자리에 분산
+for (let i = remaining.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+}
+
+let cursor = 0;
+
+for (let i = 0; i < arranged.length; i++) {
+    if (arranged[i] === null) {
+        arranged[i] = remaining[cursor++];
+    }
+}
+
+// 원형 룰렛의 시작과 끝도 고려하여 이웃한 꽝을 하나의 구역으로 표시
+const slices = arranged;
 const totalSlices = slices.length;
 const sliceAngle = Math.PI * 2 / totalSlices;
 
