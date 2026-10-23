@@ -115,112 +115,78 @@ const ctx = canvas.getContext("2d");
 const button = document.getElementById("spinButton");
 const result = document.getElementById("result");
 
+const TOTAL_SLICES = 50;
+const sliceAngle = Math.PI * 2 / TOTAL_SLICES;
 
+const colors = {
+    "꽝": "#aeb4c0",
+    "3배": "#ffca58",
+    "2배": "#b18bea",
+    "1배": "#52c7a5",
+    "1/2배": "#f07878"
+};
 
-const outcomes = [
-    { label: "꽝", count: 35, color: "#aeb4c0" },
-    { label: "3배", count: 1, color: "#ffca58" },
-    { label: "2배", count: 5, color: "#b18bea" },
-    { label: "1배", count: 5, color: "#52c7a5" },
-    { label: "1/2배", count: 4, color: "#f07878" }
-];
+// 총 50개의 확률 단위 생성
+const slices = new Array(TOTAL_SLICES).fill(null);
 
-// 50칸 생성
-const slices = [];
+// 3배는 한 칸 배치
+slices[0] = {
+    label: "3배",
+    color: colors["3배"]
+};
 
-outcomes.forEach(item => {
-    for (let i = 0; i < item.count; i++) {
-        slices.push({
-            label: item.label,
-            color: item.color
-        });
-    }
+// 2배는 다섯 칸에 균등하게 배치
+// 3배와 2배 사이에도 충분한 간격 확보
+const doublePositions = [5, 15, 25, 35, 45];
+
+doublePositions.forEach(index => {
+    slices[index] = {
+        label: "2배",
+        color: colors["2배"]
+    };
 });
 
-// 일반 칸을 균등하게 분산하고 고배율 칸은 서로 멀리 배치
-const arranged = new Array(50).fill(null);
-
-function placeSpaced(label, count, minDistance) {
-    let placed = 0;
-    let attempts = 0;
-
-    while (placed < count && attempts < 10000) {
-        attempts++;
-
-        const index = Math.floor(Math.random() * 50);
-
-        if (arranged[index] !== null) continue;
-
-        const farEnough = arranged.every((item, i) => {
-            if (!item) return true;
-            if (item.label !== "2배" && item.label !== "3배") {
-                return true;
-            }
-
-            const distance = Math.min(
-                Math.abs(index - i),
-                50 - Math.abs(index - i)
-            );
-
-            if (
-                (label === "2배" || label === "3배") &&
-                (item.label === "2배" || item.label === "3배")
-            ) {
-                return distance >= minDistance;
-            }
-
-            return true;
-        });
-
-        if (farEnough) {
-            const source = outcomes.find(x => x.label === label);
-            arranged[index] = {
-                label: label,
-                color: source.color
-            };
-            placed++;
-        }
-    }
-}
-
-// 3배는 하나, 2배는 다섯 칸을 서로 떨어뜨려 배치
-placeSpaced("3배", 1, 12);
-placeSpaced("2배", 5, 5);
-
-// 나머지 결과 채우기
+// 나머지 44칸 구성
 const remaining = [];
 
-outcomes.forEach(item => {
-    const alreadyPlaced = arranged.filter(
-        x => x && x.label === item.label
-    ).length;
+for (let i = 0; i < 35; i++) {
+    remaining.push({
+        label: "꽝",
+        color: colors["꽝"]
+    });
+}
 
-    for (let i = alreadyPlaced; i < item.count; i++) {
-        remaining.push({
-            label: item.label,
-            color: item.color
-        });
-    }
-});
+for (let i = 0; i < 5; i++) {
+    remaining.push({
+        label: "1배",
+        color: colors["1배"]
+    });
+}
 
-// 꽝과 나머지 배율 칸을 빈자리에 분산
+for (let i = 0; i < 4; i++) {
+    remaining.push({
+        label: "1/2배",
+        color: colors["1/2배"]
+    });
+}
+
+// 나머지 결과를 무작위로 섞기
 for (let i = remaining.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+
+    [remaining[i], remaining[j]] =
+        [remaining[j], remaining[i]];
 }
 
+// 비어 있는 칸에 나머지 결과 배치
 let cursor = 0;
 
-for (let i = 0; i < arranged.length; i++) {
-    if (arranged[i] === null) {
-        arranged[i] = remaining[cursor++];
+for (let i = 0; i < TOTAL_SLICES; i++) {
+    if (slices[i] === null) {
+        slices[i] = remaining[cursor];
+        cursor++;
     }
 }
-
-// 원형 룰렛의 시작과 끝도 고려하여 이웃한 꽝을 하나의 구역으로 표시
-const slices = arranged;
-const totalSlices = slices.length;
-const sliceAngle = Math.PI * 2 / totalSlices;
 
 let rotation = 0;
 let spinning = false;
@@ -236,43 +202,75 @@ function drawWheel() {
     ctx.translate(center, center);
     ctx.rotate(rotation);
 
-    slices.forEach((item, index) => {
-        const startAngle = -Math.PI / 2 + index * sliceAngle;
-        const endAngle = startAngle + sliceAngle;
-        const middleAngle = startAngle + sliceAngle / 2;
+    let index = 0;
 
-        // 칸 그리기
+    while (index < TOTAL_SLICES) {
+        const item = slices[index];
+        let endIndex = index + 1;
+
+        // 연속된 꽝 칸을 하나의 구역으로 합치기
+        if (item.label === "꽝") {
+            while (
+                endIndex < TOTAL_SLICES &&
+                slices[endIndex].label === "꽝"
+            ) {
+                endIndex++;
+            }
+        }
+
+        const startAngle =
+            -Math.PI / 2 + index * sliceAngle;
+
+        const endAngle =
+            -Math.PI / 2 + endIndex * sliceAngle;
+
+        const middleAngle =
+            (startAngle + endAngle) / 2;
+
+        // 구역 그리기
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.arc(0, 0, radius, startAngle, endAngle);
+        ctx.arc(
+            0, 0, radius,
+            startAngle, endAngle
+        );
         ctx.closePath();
 
         ctx.fillStyle = item.color;
         ctx.fill();
 
+        // 구역의 바깥 경계만 표시
+        // 이웃한 꽝 사이에는 경계선이 생기지 않음
         ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // 칸에 결과 표시
+        // 결과 글자 표시
         ctx.save();
         ctx.rotate(middleAngle);
-        ctx.translate(radius * 0.79, 0);
+        ctx.translate(radius * 0.76, 0);
         ctx.rotate(Math.PI / 2);
 
         ctx.fillStyle = "#222";
-        ctx.font = "bold 15px Arial, sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
+
+        if (item.label === "꽝") {
+            ctx.font = "bold 17px Arial, sans-serif";
+        } else {
+            ctx.font = "bold 13px Arial, sans-serif";
+        }
 
         ctx.fillText(item.label, 0, 0);
 
         ctx.restore();
-    });
+
+        index = endIndex;
+    }
 
     // 중앙 장식
     ctx.beginPath();
-    ctx.arc(0, 0, 35, 0, Math.PI * 2);
+    ctx.arc(0, 0, 38, 0, Math.PI * 2);
     ctx.fillStyle = "#ffffff";
     ctx.fill();
 
@@ -281,17 +279,16 @@ function drawWheel() {
     ctx.stroke();
 
     ctx.beginPath();
-    ctx.arc(0, 0, 11, 0, Math.PI * 2);
+    ctx.arc(0, 0, 12, 0, Math.PI * 2);
     ctx.fillStyle = "#6255e7";
     ctx.fill();
 
     ctx.restore();
 }
 
-// 확률에 따라 당첨 결과 선택
+// 당첨될 확률 단위 선택
 function chooseWinner() {
-    const randomIndex = Math.floor(Math.random() * totalSlices);
-    return randomIndex;
+    return Math.floor(Math.random() * TOTAL_SLICES);
 }
 
 // 룰렛 회전
@@ -302,15 +299,16 @@ function spin() {
     button.disabled = true;
     result.textContent = "돌아가는 중...";
 
-    // 당첨될 칸 선택
+    // 50개 단위 중 하나를 선택
     const winnerIndex = chooseWinner();
     const winner = slices[winnerIndex];
 
-    // 선택된 칸의 중앙이 포인터를 향하도록 계산
+    // 선택한 단위의 중앙을 포인터에 맞춤
     const middleAngle =
         winnerIndex * sliceAngle + sliceAngle / 2;
 
-    const fullTurns = 6 + Math.floor(Math.random() * 3);
+    const fullTurns =
+        6 + Math.floor(Math.random() * 3);
 
     const currentNormalized =
         ((rotation % (Math.PI * 2)) + Math.PI * 2)
@@ -327,7 +325,9 @@ function spin() {
     const startRotation = rotation;
 
     const endRotation =
-        rotation + fullTurns * Math.PI * 2 + extraAngle;
+        rotation +
+        fullTurns * Math.PI * 2 +
+        extraAngle;
 
     const duration = 5000;
     const startTime = performance.now();
@@ -338,6 +338,7 @@ function spin() {
             1
         );
 
+        // 부드럽게 감속
         const eased = 1 - Math.pow(1 - progress, 4);
 
         rotation =
@@ -362,7 +363,6 @@ function spin() {
     requestAnimationFrame(animate);
 }
 
-// 처음 화면 표시
 drawWheel();
 </script>
 
