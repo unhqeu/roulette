@@ -8,15 +8,17 @@ st.set_page_config(
 )
 
 html_code = r"""
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>행운의 룰렛</title>
+
 <style>
-* { box-sizing: border-box; }
+* {
+    box-sizing: border-box;
+}
 
 body {
     margin: 0;
@@ -28,11 +30,13 @@ body {
     background: #f3f4f8;
     font-family: Arial, "Malgun Gothic", sans-serif;
     color: #222;
+    padding: 20px 0;
 }
 
 h1 {
     margin: 0 0 24px;
     font-size: 32px;
+    text-align: center;
 }
 
 .wheel-container {
@@ -74,8 +78,14 @@ button {
     box-shadow: 0 5px 0 #4539b6;
 }
 
-button:hover { background: #5145d3; }
-button:disabled { opacity: 0.6; cursor: not-allowed; }
+button:hover {
+    background: #5145d3;
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
 
 #result {
     margin-top: 24px;
@@ -86,6 +96,7 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 }
 </style>
 </head>
+
 <body>
 
 <h1>🎯 행운의 룰렛</h1>
@@ -104,92 +115,104 @@ const ctx = canvas.getContext("2d");
 const button = document.getElementById("spinButton");
 const result = document.getElementById("result");
 
-// 꽝 70%, 나머지 확률은 기존 비율 유지
+// 룰렛 확률 설정: 총 50칸, 한 칸당 2%
 const outcomes = [
-    { label: "-10", weight: 8.1, color: "#5b8def" },
-    { label: "꽝", weight: 14, color: "#aeb4c0" },
-    { label: "0배", weight: 3.6, color: "#52c7a5" },
-    { label: "꽝", weight: 14, color: "#aeb4c0" },
-    { label: "3배", weight: 4.5, color: "#ffca58" },
-    { label: "꽝", weight: 14, color: "#aeb4c0" },
-    { label: "+10", weight: 8.1, color: "#f07878" },
-    { label: "꽝", weight: 14, color: "#aeb4c0" },
-    { label: "2배", weight: 5.7, color: "#b18bea" },
-    { label: "꽝", weight: 14, color: "#aeb4c0" }
+    { label: "꽝", count: 35, color: "#aeb4c0" },
+    { label: "3배", count: 1, color: "#ffca58" },
+    { label: "2배", count: 5, color: "#b18bea" },
+    { label: "1배", count: 5, color: "#52c7a5" },
+    { label: "1/2배", count: 4, color: "#f07878" }
 ];
 
-const totalWeight = outcomes.reduce((sum, item) => sum + item.weight, 0);
+// 각 결과를 실제 룰렛의 개별 칸으로 변환
+const slices = [];
+
+outcomes.forEach(item => {
+    for (let i = 0; i < item.count; i++) {
+        slices.push({
+            label: item.label,
+            color: item.color
+        });
+    }
+});
+
+// 총 50칸
+const totalSlices = slices.length;
+const sliceAngle = Math.PI * 2 / totalSlices;
 
 let rotation = 0;
 let spinning = false;
 
+// 룰렛 그리기
 function drawWheel() {
     const center = 350;
     const radius = 330;
 
     ctx.clearRect(0, 0, 700, 700);
+
     ctx.save();
     ctx.translate(center, center);
     ctx.rotate(rotation);
 
-    let startAngle = -Math.PI / 2;
-
-    outcomes.forEach(item => {
-        const sliceAngle = item.weight / totalWeight * Math.PI * 2;
+    slices.forEach((item, index) => {
+        const startAngle = -Math.PI / 2 + index * sliceAngle;
         const endAngle = startAngle + sliceAngle;
         const middleAngle = startAngle + sliceAngle / 2;
 
+        // 칸 그리기
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.arc(0, 0, radius, startAngle, endAngle);
         ctx.closePath();
+
         ctx.fillStyle = item.color;
         ctx.fill();
+
         ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 2;
         ctx.stroke();
 
+        // 칸에 결과 표시
         ctx.save();
         ctx.rotate(middleAngle);
-        ctx.translate(radius * 0.66, 0);
+        ctx.translate(radius * 0.79, 0);
         ctx.rotate(Math.PI / 2);
+
         ctx.fillStyle = "#222";
-        ctx.font = "bold 29px Arial, sans-serif";
+        ctx.font = "bold 15px Arial, sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(item.label, 0, 0);
-        ctx.restore();
 
-        startAngle = endAngle;
+        ctx.fillText(item.label, 0, 0);
+
+        ctx.restore();
     });
 
+    // 중앙 장식
     ctx.beginPath();
-    ctx.arc(0, 0, 43, 0, Math.PI * 2);
+    ctx.arc(0, 0, 35, 0, Math.PI * 2);
     ctx.fillStyle = "#ffffff";
     ctx.fill();
+
     ctx.strokeStyle = "#333333";
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 4;
     ctx.stroke();
 
     ctx.beginPath();
-    ctx.arc(0, 0, 13, 0, Math.PI * 2);
+    ctx.arc(0, 0, 11, 0, Math.PI * 2);
     ctx.fillStyle = "#6255e7";
     ctx.fill();
 
     ctx.restore();
 }
 
+// 확률에 따라 당첨 결과 선택
 function chooseWinner() {
-    let random = Math.random() * totalWeight;
-
-    for (const item of outcomes) {
-        random -= item.weight;
-        if (random < 0) return item;
-    }
-
-    return outcomes[outcomes.length - 1];
+    const randomIndex = Math.floor(Math.random() * totalSlices);
+    return randomIndex;
 }
 
+// 룰렛 회전
 function spin() {
     if (spinning) return;
 
@@ -197,35 +220,48 @@ function spin() {
     button.disabled = true;
     result.textContent = "돌아가는 중...";
 
-    const winner = chooseWinner();
-    const winnerIndex = outcomes.indexOf(winner);
+    // 당첨될 칸 선택
+    const winnerIndex = chooseWinner();
+    const winner = slices[winnerIndex];
 
-    let accumulated = 0;
-    for (let i = 0; i < winnerIndex; i++) {
-        accumulated += outcomes[i].weight / totalWeight * Math.PI * 2;
-    }
-
-    const sliceAngle = winner.weight / totalWeight * Math.PI * 2;
-    const middleAngle = accumulated + sliceAngle / 2;
+    // 선택된 칸의 중앙이 포인터를 향하도록 계산
+    const middleAngle =
+        winnerIndex * sliceAngle + sliceAngle / 2;
 
     const fullTurns = 6 + Math.floor(Math.random() * 3);
+
     const currentNormalized =
-        ((rotation % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+        ((rotation % (Math.PI * 2)) + Math.PI * 2)
+        % (Math.PI * 2);
+
     const desiredNormalized =
-        ((-middleAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+        ((-middleAngle % (Math.PI * 2)) + Math.PI * 2)
+        % (Math.PI * 2);
+
     const extraAngle =
-        (desiredNormalized - currentNormalized + Math.PI * 2) % (Math.PI * 2);
+        (desiredNormalized - currentNormalized + Math.PI * 2)
+        % (Math.PI * 2);
 
     const startRotation = rotation;
-    const endRotation = rotation + fullTurns * Math.PI * 2 + extraAngle;
+
+    const endRotation =
+        rotation + fullTurns * Math.PI * 2 + extraAngle;
+
     const duration = 5000;
     const startTime = performance.now();
 
     function animate(now) {
-        const progress = Math.min((now - startTime) / duration, 1);
+        const progress = Math.min(
+            (now - startTime) / duration,
+            1
+        );
+
         const eased = 1 - Math.pow(1 - progress, 4);
 
-        rotation = startRotation + (endRotation - startRotation) * eased;
+        rotation =
+            startRotation +
+            (endRotation - startRotation) * eased;
+
         drawWheel();
 
         if (progress < 1) {
@@ -233,7 +269,9 @@ function spin() {
         } else {
             rotation = endRotation;
             drawWheel();
+
             result.textContent = "결과: " + winner.label;
+
             spinning = false;
             button.disabled = false;
         }
@@ -242,12 +280,12 @@ function spin() {
     requestAnimationFrame(animate);
 }
 
+// 처음 화면 표시
 drawWheel();
 </script>
 
 </body>
 </html>
-
 """
 
 components.html(
