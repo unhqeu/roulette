@@ -4,16 +4,16 @@ import streamlit.components.v1 as components
 
 st.set_page_config(
     page_title="룰렛",
-    page_icon="🎯",
-    layout="centered"
+    layout="wide"
 )
 
-html_code = """
+html_code = r"""
 <!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>행운의 룰렛</title>
 
 <style>
 * {
@@ -27,19 +27,16 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: #FFFFFF;
+    background: #f3f4f8;
     font-family: Arial, "Malgun Gothic", sans-serif;
-    color: #202938;
-    padding: 24px 0;
+    color: #222;
+    padding: 20px 0;
 }
 
 h1 {
-    margin: 0 0 28px;
+    margin: 0 0 24px;
     font-size: 32px;
-    font-weight: 800;
-    letter-spacing: -1.2px;
     text-align: center;
-    color: #202938;
 }
 
 .wheel-container {
@@ -52,7 +49,7 @@ canvas {
     width: 100%;
     height: 100%;
     display: block;
-    filter: drop-shadow(0 5px 12px #1F29371A);
+    filter: drop-shadow(0 7px 10px #0002);
 }
 
 .pointer {
@@ -63,31 +60,26 @@ canvas {
     transform: translateX(-50%);
     width: 0;
     height: 0;
-    border-left: 16px solid transparent;
-    border-right: 16px solid transparent;
-    border-top: 34px solid #26364A;
-    filter: drop-shadow(0 2px 2px #00000012);
+    border-left: 19px solid transparent;
+    border-right: 19px solid transparent;
+    border-top: 38px solid #222;
 }
 
 button {
     margin-top: 28px;
-    padding: 15px 52px;
+    padding: 15px 55px;
     border: none;
-    border-radius: 10px;
-    background: #26364A;
-    color: #FFFFFF;
-    font-size: 20px;
-    font-weight: 700;
+    border-radius: 14px;
+    background: #6255e7;
+    color: white;
+    font-size: 21px;
+    font-weight: bold;
     cursor: pointer;
-    transition: background 0.2s, transform 0.2s;
+    box-shadow: 0 5px 0 #4539b6;
 }
 
 button:hover {
-    background: #3B526D;
-}
-
-button:active {
-    transform: translateY(1px);
+    background: #5145d3;
 }
 
 button:disabled {
@@ -96,214 +88,274 @@ button:disabled {
 }
 
 #result {
-    margin-top: 25px;
+    margin-top: 24px;
     min-height: 42px;
-    font-size: 26px;
-    font-weight: 800;
+    font-size: 27px;
+    font-weight: bold;
     text-align: center;
-    color: #26364A;
-    letter-spacing: -0.5px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>행운의 룰렛</h1>
+<h1>🎯 행운의 룰렛</h1>
 
 <div class="wheel-container">
     <div class="pointer"></div>
     <canvas id="wheel" width="700" height="700"></canvas>
 </div>
 
-<button id="spinButton" onclick="spin()">룰렛 돌리기</button>
-<div id="result">행운을 시험해 보세요!</div>
+<button id="spinButton" onclick="spin()">룰렛 돌리기!</button>
+<div id="result">과연 결과는?</div>
 
 <script>
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+const button = document.getElementById("spinButton");
+const result = document.getElementById("result");
+
 const TOTAL_SLICES = 50;
 const sliceAngle = Math.PI * 2 / TOTAL_SLICES;
 
 const colors = {
-    "꽝": "#D9DEE5",
-    "3배": "#26364A",
-    "2배": "#52749B",
-    "1배": "#8DA8C4",
-    "1/2배": "#B8C6D5"
+    "꽝": "#aeb4c0",
+    "3배": "#ffca58",
+    "2배": "#b18bea",
+    "1배": "#52c7a5",
+    "1/2배": "#f07878"
 };
 
-// 총 50칸: 꽝 35, 3배 1, 2배 5, 1배 5, 1/2배 4
-const slices = Array(TOTAL_SLICES).fill("꽝");
+// 총 50개의 확률 단위 생성
+const slices = new Array(TOTAL_SLICES).fill(null);
 
-// 당첨 칸을 룰렛 전체에 분산 배치
-slices[0] = "3배";
+// 3배는 한 칸 배치
+slices[0] = {
+    label: "3배",
+    color: colors["3배"]
+};
 
-[5, 15, 25, 35, 45].forEach(index => {
-    slices[index] = "2배";
+// 2배는 다섯 칸에 균등하게 배치
+// 3배와 2배 사이에도 충분한 간격 확보
+const doublePositions = [5, 15, 25, 35, 45];
+
+doublePositions.forEach(index => {
+    slices[index] = {
+        label: "2배",
+        color: colors["2배"]
+    };
 });
 
-[2, 12, 22, 32, 42].forEach(index => {
-    slices[index] = "1배";
-});
+// 나머지 44칸 구성
+const remaining = [];
 
-[8, 20, 30, 40].forEach(index => {
-    slices[index] = "1/2배";
-});
+for (let i = 0; i < 35; i++) {
+    remaining.push({
+        label: "꽝",
+        color: colors["꽝"]
+    });
+}
 
-const canvas = document.getElementById("wheel");
-const ctx = canvas.getContext("2d");
+for (let i = 0; i < 5; i++) {
+    remaining.push({
+        label: "1배",
+        color: colors["1배"]
+    });
+}
 
-const center = canvas.width / 2;
-const radius = center - 10;
+for (let i = 0; i < 4; i++) {
+    remaining.push({
+        label: "1/2배",
+        color: colors["1/2배"]
+    });
+}
 
-let currentRotation = 0;
-let isSpinning = false;
+// 나머지 결과를 무작위로 섞기
+for (let i = remaining.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
 
+    [remaining[i], remaining[j]] =
+        [remaining[j], remaining[i]];
+}
+
+// 비어 있는 칸에 나머지 결과 배치
+let cursor = 0;
+
+for (let i = 0; i < TOTAL_SLICES; i++) {
+    if (slices[i] === null) {
+        slices[i] = remaining[cursor];
+        cursor++;
+    }
+}
+
+let rotation = 0;
+let spinning = false;
+
+// 룰렛 그리기
 function drawWheel() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const center = 350;
+    const radius = 330;
+
+    ctx.clearRect(0, 0, 700, 700);
 
     ctx.save();
     ctx.translate(center, center);
-    ctx.rotate(currentRotation);
+    ctx.rotate(rotation);
 
     let index = 0;
 
     while (index < TOTAL_SLICES) {
-        const currentLabel = slices[index];
+        const item = slices[index];
         let endIndex = index + 1;
 
-        // 연속된 꽝 칸을 하나의 구간으로 묶기
-        if (currentLabel === "꽝") {
+        // 연속된 꽝 칸을 하나의 구역으로 합치기
+        if (item.label === "꽝") {
             while (
                 endIndex < TOTAL_SLICES &&
-                slices[endIndex] === "꽝"
+                slices[endIndex].label === "꽝"
             ) {
                 endIndex++;
             }
         }
 
-        const startAngle = -Math.PI / 2 + index * sliceAngle;
-        const endAngle = -Math.PI / 2 + endIndex * sliceAngle;
+        const startAngle =
+            -Math.PI / 2 + index * sliceAngle;
 
+        const endAngle =
+            -Math.PI / 2 + endIndex * sliceAngle;
+
+        const middleAngle =
+            (startAngle + endAngle) / 2;
+
+        // 구역 그리기
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.arc(0, 0, radius, startAngle, endAngle);
+        ctx.arc(
+            0, 0, radius,
+            startAngle, endAngle
+        );
         ctx.closePath();
 
-        ctx.fillStyle = colors[currentLabel];
+        ctx.fillStyle = item.color;
         ctx.fill();
 
-        // 각 구간의 바깥 경계만 흰색으로 표시
-        ctx.strokeStyle = "#FFFFFF";
+        // 구역의 바깥 경계만 표시
+        // 이웃한 꽝 사이에는 경계선이 생기지 않음
+        ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // 각 구간에 결과 표시
-        const middleAngle = (startAngle + endAngle) / 2;
-        const textRadius = radius * 0.68;
-
-        const textX = Math.cos(middleAngle) * textRadius;
-        const textY = Math.sin(middleAngle) * textRadius;
-
+        // 결과 글자 표시
         ctx.save();
-        ctx.translate(textX, textY);
-        ctx.rotate(middleAngle + Math.PI / 2);
+        ctx.rotate(middleAngle);
+        ctx.translate(radius * 0.76, 0);
+        ctx.rotate(Math.PI / 2);
 
+        ctx.fillStyle = "#222";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.font = "bold 19px Arial, Malgun Gothic, sans-serif";
 
-        if (currentLabel === "3배") {
-            ctx.fillStyle = "#FFFFFF";
+        if (item.label === "꽝") {
+            ctx.font = "bold 17px Arial, sans-serif";
         } else {
-            ctx.fillStyle = "#26364A";
+            ctx.font = "bold 13px Arial, sans-serif";
         }
 
-        ctx.fillText(currentLabel, 0, 0);
+        ctx.fillText(item.label, 0, 0);
+
         ctx.restore();
 
         index = endIndex;
     }
 
-    // 중앙 원
+    // 중앙 장식
     ctx.beginPath();
     ctx.arc(0, 0, 38, 0, Math.PI * 2);
-    ctx.fillStyle = "#FFFFFF";
+    ctx.fillStyle = "#ffffff";
     ctx.fill();
-    ctx.strokeStyle = "#26364A";
-    ctx.lineWidth = 3;
+
+    ctx.strokeStyle = "#333333";
+    ctx.lineWidth = 4;
     ctx.stroke();
 
-    // 중앙 점
     ctx.beginPath();
-    ctx.arc(0, 0, 11, 0, Math.PI * 2);
-    ctx.fillStyle = "#26364A";
+    ctx.arc(0, 0, 12, 0, Math.PI * 2);
+    ctx.fillStyle = "#6255e7";
     ctx.fill();
 
     ctx.restore();
 }
 
+// 당첨될 확률 단위 선택
+function chooseWinner() {
+    return Math.floor(Math.random() * TOTAL_SLICES);
+}
+
+// 룰렛 회전
 function spin() {
-    if (isSpinning) return;
+    if (spinning) return;
 
-    isSpinning = true;
-
-    const button = document.getElementById("spinButton");
-    const result = document.getElementById("result");
-
+    spinning = true;
     button.disabled = true;
-    result.textContent = "룰렛이 돌아가는 중...";
+    result.textContent = "돌아가는 중...";
 
-    // 실제 당첨 칸을 무작위로 선택
-    const winnerIndex = Math.floor(Math.random() * TOTAL_SLICES);
+    // 50개 단위 중 하나를 선택
+    const winnerIndex = chooseWinner();
     const winner = slices[winnerIndex];
 
-    // 선택한 칸의 중앙이 위쪽 화살표를 향하도록 회전
-    const targetAngle =
-        -winnerIndex * sliceAngle - sliceAngle / 2;
+    // 선택한 단위의 중앙을 포인터에 맞춤
+    const middleAngle =
+        winnerIndex * sliceAngle + sliceAngle / 2;
 
-    const fullRotations = 6 * Math.PI * 2;
-    const normalizedCurrent =
-        ((currentRotation % (Math.PI * 2)) + Math.PI * 2)
+    const fullTurns =
+        6 + Math.floor(Math.random() * 3);
+
+    const currentNormalized =
+        ((rotation % (Math.PI * 2)) + Math.PI * 2)
         % (Math.PI * 2);
 
-    const normalizedTarget =
-        ((targetAngle % (Math.PI * 2)) + Math.PI * 2)
+    const desiredNormalized =
+        ((-middleAngle % (Math.PI * 2)) + Math.PI * 2)
         % (Math.PI * 2);
 
-    const extraRotation =
-        (normalizedTarget - normalizedCurrent + Math.PI * 2)
+    const extraAngle =
+        (desiredNormalized - currentNormalized + Math.PI * 2)
         % (Math.PI * 2);
 
-    const startRotation = currentRotation;
-    const finalRotation =
-        startRotation + fullRotations + extraRotation;
+    const startRotation = rotation;
+
+    const endRotation =
+        rotation +
+        fullTurns * Math.PI * 2 +
+        extraAngle;
 
     const duration = 5000;
     const startTime = performance.now();
 
     function animate(now) {
-        const elapsed = now - startTime;
-        const progress = Math.min(elapsed / duration, 1);
+        const progress = Math.min(
+            (now - startTime) / duration,
+            1
+        );
 
-        // 처음에는 빠르게, 끝에는 천천히 감속
-        const easedProgress =
-            1 - Math.pow(1 - progress, 4);
+        // 부드럽게 감속
+        const eased = 1 - Math.pow(1 - progress, 4);
 
-        currentRotation =
+        rotation =
             startRotation +
-            (finalRotation - startRotation) * easedProgress;
+            (endRotation - startRotation) * eased;
 
         drawWheel();
 
         if (progress < 1) {
             requestAnimationFrame(animate);
         } else {
-            currentRotation = finalRotation;
+            rotation = endRotation;
             drawWheel();
 
-            result.textContent = "결과: " + winner;
+            result.textContent = "결과: " + winner.label;
 
-            isSpinning = false;
+            spinning = false;
             button.disabled = false;
         }
     }
@@ -318,4 +370,8 @@ drawWheel();
 </html>
 """
 
-components.html(html_code, height=780, scrolling=False)
+components.html(
+    html_code,
+    height=800,
+    scrolling=False
+)
