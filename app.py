@@ -118,12 +118,13 @@ const result = document.getElementById("result");
 const TOTAL_SLICES = 50;
 const sliceAngle = Math.PI * 2 / TOTAL_SLICES;
 
+
 const colors = {
-    "꽝": "#aeb4c0",
-    "3배": "#ffca58",
-    "2배": "#b18bea",
-    "1배": "#52c7a5",
-    "1/2배": "#f07878"
+    "꽝": "#E5E7EB",    // 밝은 쿨그레이
+    "3배": "#E8CFA8",   // 차분한 샌드 베이지
+    "2배": "#C5B8E8",   // 은은한 라벤더
+    "1배": "#A8D5C2",   // 부드러운 세이지 민트
+    "1/2배": "#E8BFC3"  // 차분한 더스티 핑크
 };
 
 // 총 50개의 확률 단위 생성
