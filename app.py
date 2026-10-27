@@ -126,70 +126,51 @@ const colors = {
     "1/2배": "#f07878"
 };
 
-// 총 50개의 확률 단위 생성
-const slices = new Array(TOTAL_SLICES).fill(null);
 
-// 3배는 한 칸 배치
-slices[0] = {
-    label: "3배",
-    color: colors["3배"]
-};
+const slices = new Array(50).fill(null);
 
-// 2배는 다섯 칸에 균등하게 배치
-// 3배와 2배 사이에도 충분한 간격 확보
-const doublePositions = [5, 15, 25, 35, 45];
+// 3배: 한 칸
+slices[0] = { label: "3배", color: colors["3배"] };
 
-doublePositions.forEach(index => {
-    slices[index] = {
-        label: "2배",
-        color: colors["2배"]
-    };
+// 2배: 3배와 멀리 떨어진 위치에 배치
+[10, 20, 30, 40].forEach(index => {
+    slices[index] = { label: "2배", color: colors["2배"] };
 });
 
-// 나머지 44칸 구성
-const remaining = [];
+// 나머지 비꽝 결과를 전체에 분산
+const otherResults = [
+    { label: "2배", color: colors["2배"] },
+    { label: "1배", color: colors["1배"] },
+    { label: "1배", color: colors["1배"] },
+    { label: "1배", color: colors["1배"] },
+    { label: "1배", color: colors["1배"] },
+    { label: "1배", color: colors["1배"] },
+    { label: "1/2배", color: colors["1/2배"] },
+    { label: "1/2배", color: colors["1/2배"] },
+    { label: "1/2배", color: colors["1/2배"] },
+    { label: "1/2배", color: colors["1/2배"] }
+];
 
-for (let i = 0; i < 35; i++) {
-    remaining.push({
-        label: "꽝",
-        color: colors["꽝"]
-    });
-}
+// 각 구간에 비꽝 결과를 하나씩 배치
+const positions = [5, 15, 25, 35, 45, 7, 17, 27, 37, 47];
 
-for (let i = 0; i < 5; i++) {
-    remaining.push({
-        label: "1배",
-        color: colors["1배"]
-    });
-}
+positions.forEach((index, i) => {
+    slices[index] = otherResults[i];
+});
 
-for (let i = 0; i < 4; i++) {
-    remaining.push({
-        label: "1/2배",
-        color: colors["1/2배"]
-    });
-}
-
-// 나머지 결과를 무작위로 섞기
-for (let i = remaining.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-
-    [remaining[i], remaining[j]] =
-        [remaining[j], remaining[i]];
-}
-
-// 비어 있는 칸에 나머지 결과 배치
-let cursor = 0;
-
-for (let i = 0; i < TOTAL_SLICES; i++) {
+// 남은 칸은 모두 꽝
+for (let i = 0; i < 50; i++) {
     if (slices[i] === null) {
-        slices[i] = remaining[cursor];
-        cursor++;
+        slices[i] = {
+            label: "꽝",
+            color: colors["꽝"]
+        };
     }
 }
 
 let rotation = 0;
 let spinning = false;
+
 
 // 룰렛 그리기
 function drawWheel() {
