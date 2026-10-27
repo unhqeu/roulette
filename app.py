@@ -15,6 +15,7 @@ html_code = r"""
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>행운의 룰렛</title>
 
+
 <style>
 * {
     box-sizing: border-box;
@@ -27,29 +28,33 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: #f3f4f8;
+    background: #111827;
     font-family: Arial, "Malgun Gothic", sans-serif;
-    color: #222;
+    color: #F9FAFB;
     padding: 20px 0;
 }
 
 h1 {
-    margin: 0 0 24px;
+    margin: 0 0 28px;
     font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -1px;
     text-align: center;
+    color: #F9FAFB;
 }
 
 .wheel-container {
     position: relative;
     width: min(88vw, 460px);
     aspect-ratio: 1;
+    border-radius: 50%;
 }
 
 canvas {
     width: 100%;
     height: 100%;
     display: block;
-    filter: drop-shadow(0 7px 10px #0002);
+    filter: drop-shadow(0 12px 24px #0007);
 }
 
 .pointer {
@@ -60,26 +65,34 @@ canvas {
     transform: translateX(-50%);
     width: 0;
     height: 0;
-    border-left: 19px solid transparent;
-    border-right: 19px solid transparent;
-    border-top: 38px solid #222;
+    border-left: 17px solid transparent;
+    border-right: 17px solid transparent;
+    border-top: 36px solid #F8FAFC;
+    filter: drop-shadow(0 3px 4px #0008);
 }
 
 button {
-    margin-top: 28px;
-    padding: 15px 55px;
-    border: none;
-    border-radius: 14px;
-    background: #6255e7;
-    color: white;
-    font-size: 21px;
-    font-weight: bold;
+    margin-top: 30px;
+    padding: 15px 52px;
+    border: 1px solid #64748B;
+    border-radius: 12px;
+    background: #334155;
+    color: #FFFFFF;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
     cursor: pointer;
-    box-shadow: 0 5px 0 #4539b6;
+    box-shadow: 0 5px 0 #0B1220;
+    transition: background 0.2s, transform 0.2s;
 }
 
 button:hover {
-    background: #5145d3;
+    background: #475569;
+}
+
+button:active {
+    transform: translateY(2px);
+    box-shadow: 0 3px 0 #0B1220;
 }
 
 button:disabled {
@@ -88,11 +101,13 @@ button:disabled {
 }
 
 #result {
-    margin-top: 24px;
+    margin-top: 26px;
     min-height: 42px;
     font-size: 27px;
-    font-weight: bold;
+    font-weight: 800;
     text-align: center;
+    color: #F8FAFC;
+    letter-spacing: -0.5px;
 }
 </style>
 </head>
@@ -118,14 +133,14 @@ const result = document.getElementById("result");
 const TOTAL_SLICES = 50;
 const sliceAngle = Math.PI * 2 / TOTAL_SLICES;
 
-
 const colors = {
-    "꽝": "#E5E7EB",    // 밝은 쿨그레이
-    "3배": "#E8CFA8",   // 차분한 샌드 베이지
-    "2배": "#C5B8E8",   // 은은한 라벤더
-    "1배": "#A8D5C2",   // 부드러운 세이지 민트
-    "1/2배": "#E8BFC3"  // 차분한 더스티 핑크
+    "꽝": "#475569",    // 슬레이트 네이비
+    "3배": "#F59E0B",   // 골드
+    "2배": "#7C5CFC",   // 딥 퍼플
+    "1배": "#0F9F8F",   // 딥 틸
+    "1/2배": "#E05263"  // 딥 코랄
 };
+
 
 // 총 50개의 확률 단위 생성
 
@@ -224,7 +239,7 @@ function drawWheel() {
 
         // 구역의 바깥 경계만 표시
         // 이웃한 꽝 사이에는 경계선이 생기지 않음
-        ctx.strokeStyle = "#ffffff";
+        ctx.strokeStyle = "#111827";
         ctx.lineWidth = 2;
         ctx.stroke();
 
@@ -254,16 +269,16 @@ function drawWheel() {
     // 중앙 장식
     ctx.beginPath();
     ctx.arc(0, 0, 38, 0, Math.PI * 2);
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = "#F8FAFC";
     ctx.fill();
 
-    ctx.strokeStyle = "#333333";
+    ctx.strokeStyle = "#111827";
     ctx.lineWidth = 4;
     ctx.stroke();
 
     ctx.beginPath();
     ctx.arc(0, 0, 12, 0, Math.PI * 2);
-    ctx.fillStyle = "#6255e7";
+    ctx.fillStyle = "#F59E0B";
     ctx.fill();
 
     ctx.restore();
